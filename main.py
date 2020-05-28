@@ -55,15 +55,8 @@ def identity_tokenizer(text):
 tfidf = TfidfVectorizer(tokenizer=identity_tokenizer, lowercase=False)    
 X = tfidf.fit_transform(X)
 
-
-
-
 # Split the data to train and test set.
 X_train, y_train, X_test, y_test = iterative_train_test_split(X, y, test_size = 0.2)
-
-# Define a classification pipeline.
-clf = make_pipeline(StandardScaler(with_mean=False), LinearSVC())
-
 
 
 # Binary Relevance models training
@@ -80,26 +73,26 @@ print()
 
 # Calibrated Label Ranking models training
 print('Training Calibrated Label Ranking models...')
-pred_CLR = []
+preds = []
 for e,(data,target) in enumerate(ml.CalibratedLabelRanking(X_train,y_train)):
     if e==0:
-        pred_CLR.append([1 for i in range(len(y_test))])
+        preds.append([1 for i in range(len(y_test))])
         continue
     clf = make_pipeline(StandardScaler(with_mean=False), LinearSVC())
     clf.fit(data,target)
-    pred_CLR.append(clf.predict(X_test))
-pred_CLR = np.transpose(pred_CLR)
+    preds.append(clf.predict(X_test))
+preds = np.transpose(preds)
 print('Done!!!')
 print()
 
-preds = []
-for pred in pred_CLR:
-    preds.append([1 if list(pred).count(i+1)>list(pred).count(0) else 0 for i in range(6)])
-
+pred_CLR = []
+for pred in preds:
+    pred_CLR.append([1 if list(pred).count(i+1)>list(pred).count(0) else 0 for i in range(6)])
+pred_CLR = np.array(pred_CLR)
 
 
 print('// Accuracy of multi-labeled approaches //')
 print()
 print('Binary Relevance Accuracy:',accuracy_score(pred_BR,y_test))
-print('Calibrated Label Ranking Accuracy:',accuracy_score(np.array(preds),y_test))
+print('Calibrated Label Ranking Accuracy:',accuracy_score(pred_CLR,y_test))
 
