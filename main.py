@@ -16,7 +16,9 @@ from skmultilearn.model_selection import iterative_train_test_split
 # Libraries for classification model.
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import LinearSVC
-
+from sklearn.linear_model import LogisticRegression
+import warnings
+warnings.simplefilter("ignore")
 
 
 # Load the data.
@@ -59,16 +61,20 @@ X = tfidf.fit_transform(X)
 X_train, y_train, X_test, y_test = iterative_train_test_split(X, y, test_size = 0.2)
 
 
+
 # Binary Relevance models training
+print()
 print('Training Binary Relevance models...')
 pred_BR = []
 for e,(data,target) in enumerate(ml.BinaryRelevance(X_train,y_train)):
-    clf = make_pipeline(StandardScaler(with_mean=False), LinearSVC())
+    clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression())
     clf.fit(data,target)
+    prediction = clf.predict(X_test)
     pred_BR.append(clf.predict(X_test))
 pred_BR = np.transpose(pred_BR)
 print('Done!!!')
 print()
+
 
 
 # Calibrated Label Ranking models training
@@ -78,9 +84,10 @@ for e,(data,target) in enumerate(ml.CalibratedLabelRanking(X_train,y_train)):
     if e==0:
         preds.append([1 for i in range(len(y_test))])
         continue
-    clf = make_pipeline(StandardScaler(with_mean=False), LinearSVC())
+    clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression())
     clf.fit(data,target)
-    preds.append(clf.predict(X_test))
+    prediction = clf.predict(X_test)
+    preds.append(prediction)
 preds = np.transpose(preds)
 print('Done!!!')
 print()
@@ -91,8 +98,24 @@ for pred in preds:
 pred_CLR = np.array(pred_CLR)
 
 
-print('// Accuracy of multi-labeled approaches //')
-print()
-print('Binary Relevance Accuracy:',accuracy_score(pred_BR,y_test))
-print('Calibrated Label Ranking Accuracy:',accuracy_score(pred_CLR,y_test))
 
+# Print classification results
+print('// Accuracy of multi-labeled approaches //')
+
+print()
+print('\t-Binary Relevance-')
+print()
+print('Accuracy per example:',accuracy_score(pred_BR,y_test))
+print('Accuracy per label')
+for i in range(6):
+    label_acc = accuracy_score(pred_BR[:,i],y_test[:,i])
+    print(label_names[i],"->",label_acc)
+    
+print()  
+print('\t-Calibrated Label Ranking-')
+print()
+print('Accuracy per example:',accuracy_score(pred_CLR,y_test))
+print('Accuracy per label')
+for i in range(6):
+    label_acc = accuracy_score(pred_CLR[:,i],y_test[:,i])
+    print(label_names[i],"->",label_acc)
