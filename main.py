@@ -1,5 +1,7 @@
 
 import multilabel as ml
+from costsensitive import cost_sensitive
+from sklearn.svm import SVC
 # Libraries for data loading and preproccessing.
 import re
 import nltk 
@@ -16,6 +18,7 @@ from skmultilearn.model_selection import iterative_train_test_split
 # Libraries for classification model.
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 import warnings
 warnings.simplefilter("ignore")
@@ -27,7 +30,7 @@ myData = pd.read_csv('train.csv')
 X = myData.iloc[:,1].values
 y = myData.iloc[:,2:].values
 label_names = ["toxic","severe_toxic","obscene", "threat","insult","identity_hate"]
-
+#label_names = myData.loc[:, 'toxic':'identity_hate']
 
 # Preprocessing of Wikipedia edits.
 nltk.download('wordnet')
@@ -60,6 +63,10 @@ X = tfidf.fit_transform(X)
 # Split the data to train and test set.
 X_train, y_train, X_test, y_test = iterative_train_test_split(X, y, test_size = 0.2)
 
+#Cost Sensitive Learning
+clf = LogisticRegression(C=12.0)
+#clf = make_pipeline(StandardScaler(with_mean=False), SVC(gamma='auto', probability=True))
+cost_sensitive(X_train, y_train, X_test, y_test, clf)
 
 
 # Binary Relevance models training
@@ -119,3 +126,4 @@ print('Accuracy per label')
 for i in range(6):
     label_acc = accuracy_score(pred_CLR[:,i],y_test[:,i])
     print(label_names[i],"->",label_acc)
+   
