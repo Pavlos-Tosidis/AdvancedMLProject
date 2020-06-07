@@ -5,10 +5,10 @@ from imblearn.over_sampling import SMOTE
 
 
 def random_undersampler(X, y):
-    print(sorted(Counter(y).items()))
+    print('Class balance before random_undersampler: '+str(sorted(Counter(y).items())))
     rus = RandomUnderSampler(random_state=0)
     X_resampled, y_resampled = rus.fit_resample(X, y)
-    print(sorted(Counter(y_resampled).items()))
+    print('Class balance after random_undersampler: '+str(sorted(Counter(y_resampled).items())))
     return X_resampled, y_resampled
 
 
@@ -22,8 +22,8 @@ def tomek_links(X,y):
     
     
 def smote(X,y):
-    print(sorted(Counter(y).items()))
-    smo = SMOTE()
+    print('Class balance before SMOTE: '+str(sorted(Counter(y).items())))
+    smo = SMOTE(random_state=0)
     X_resampled, y_resampled = smo.fit_resample(X, y)
-    print(sorted(Counter(y_resampled).items()))
+    print('Class balance after SMOTE: '+str(sorted(Counter(y_resampled).items())))
     return X_resampled, y_resampled

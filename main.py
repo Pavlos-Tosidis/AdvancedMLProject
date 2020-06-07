@@ -1,6 +1,7 @@
 
 import multilabel as ml
 from costsensitive import cost_sensitive
+import classimbalance
 from sklearn.svm import SVC
 # Libraries for data loading and preproccessing.
 import re
@@ -68,12 +69,22 @@ clf = LogisticRegression(C=12.0)
 #clf = make_pipeline(StandardScaler(with_mean=False), SVC(gamma='auto', probability=True))
 cost_sensitive(X_train, y_train, X_test, y_test, clf)
 
+# class imbalance method (cim)
+# 1: no class imbalance method applied
+# 2: random undersampler
+# 3: SMOTE
+cim = 3
+
 
 # Binary Relevance models training
 print()
 print('Training Binary Relevance models...')
 pred_BR = []
 for e,(data,target) in enumerate(ml.BinaryRelevance(X_train,y_train)):
+    if cim == 2:
+        data, target = classimbalance.random_undersampler(data, target)
+    elif cim == 3:
+        data, target = classimbalance.smote(data, target)
     clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression())
     clf.fit(data,target)
     prediction = clf.predict(X_test)
@@ -91,6 +102,10 @@ for e,(data,target) in enumerate(ml.CalibratedLabelRanking(X_train,y_train)):
     if e==0:
         preds.append([1 for i in range(len(y_test))])
         continue
+    if cim == 2:
+        data, target = classimbalance.random_undersampler(data, target)
+    elif cim == 3:
+        data, target = classimbalance.smote(data, target)
     clf = make_pipeline(StandardScaler(with_mean=False), LogisticRegression())
     clf.fit(data,target)
     prediction = clf.predict(X_test)
