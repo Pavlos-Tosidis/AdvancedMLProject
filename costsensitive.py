@@ -173,7 +173,7 @@ def cost_sensitive(X_train, y_train, X_test, y_test, classifier):
 
     print('*'*10+'*'*10)
     print('{:>20} | {:>20} | {:>20} | {:>20} | {:>20} | {:>20} |'
-          .format('No weight min', 'no calibration', 'costcla', 'nsigmoid', 'isotonic', 'class_weighting'))
+          .format('No cost min', 'no calibration', 'costcla', 'nsigmoid', 'isotonic', 'class_weighting'))
     print('{:>20} | {:>20} | {:>20} | {:>20} | {:>20} | {:>20} |'
           .format(total_cost, total_cost_no_calib, total_cost_costcla, total_cost_nsigmoid, total_cost_isotonic, total_cost_cw))
     print('*'*10+'*'*10)
