@@ -147,8 +147,10 @@ def cost_sensitive(X_train, y_train, X_test, y_test, classifier):
     from sklearn.utils.class_weight import compute_class_weight
     total_cost_cw = 0
     for cnt, label in enumerate(label_names):
-        clf = LogisticRegression(C=12.0, class_weight='balanced')
-        #clf = make_pipeline(StandardScaler(with_mean=False), SVC(gamma='auto', probability=True, class_weight='balanced'))
+        if clasifier == LogisticRegression(C=12.0):
+            clf = LogisticRegression(C=12.0, class_weight='balanced')
+        else:
+            clf = make_pipeline(StandardScaler(with_mean=False), SVC(gamma='auto', probability=True, class_weight='balanced'))
         print('Processing {} with class weighting:'.format(label))
         y_train_b = 1-y_train[:, [cnt]]
         y_test_b = 1-y_test[:, [cnt]]
