@@ -111,17 +111,7 @@ if mlb == 1:
         elif cim == 3:
             data, target = classimbalance.smote(data, target)
         if cm == 1:
-            # Probability calibration using Isotonic Method
-            cc = CalibratedClassifierCV(clf, method="isotonic", cv=3)
-            model = cc.fit(data, target)
-            prob_test = model.predict_proba(X_test)
-            bmr = BayesMinimumRiskClassifier(calibration=False)
-            prediction = bmr.predict(prob_test, cost_matrix)
-            loss = cost_loss(y_test[:, e], prediction, cost_matrix)
-            pred_BR.append(prediction)
-            cost_BR.append(loss)
-        elif cm == 2:
-            # Probability calibration using CostCla calibration
+            # Probability calibration using CostCla calibration            
             model = clf.fit(data, target)
             prob_train = model.predict_proba(data)
             bmr = BayesMinimumRiskClassifier(calibration=True)
@@ -131,6 +121,18 @@ if mlb == 1:
             loss = cost_loss(y_test[:, e], prediction, cost_matrix)
             pred_BR.append(prediction)
             cost_BR.append(loss)
+        elif cm == 2:
+            # Probability calibration using Isotonic Method
+            cc = CalibratedClassifierCV(clf, method="isotonic", cv=3)
+            model = cc.fit(data, target)
+            prob_test = model.predict_proba(X_test)
+            bmr = BayesMinimumRiskClassifier(calibration=False)
+            prediction = bmr.predict(prob_test, cost_matrix)
+            loss = cost_loss(y_test[:, e], prediction, cost_matrix)
+            pred_BR.append(prediction)
+            cost_BR.append(loss)
+            # Probability calibration using CostCla calibration
+
         elif cm == 3:
             # Cost minimization using class weighting
             clf = LogisticRegression(C=12.0, class_weight={0: 1, 1: cost})
