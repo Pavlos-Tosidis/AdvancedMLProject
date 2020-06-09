@@ -25,8 +25,8 @@ warnings.simplefilter("ignore")
 # Load the data.
 myData = pd.read_csv('train.csv')
 
-X = myData.iloc[:20000, 1].values
-y = myData.iloc[:20000, 2:].values
+X = myData.iloc[:, 1].values
+y = myData.iloc[:, 2:].values
 cost_list = [3, 4, 2, 6, 5, 7]
 label_names = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
