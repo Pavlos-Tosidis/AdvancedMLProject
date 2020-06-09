@@ -11,15 +11,11 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from skmultilearn.model_selection import iterative_train_test_split
 # Libraries for classification model.
-from sklearn.pipeline import make_pipeline
-from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 import warnings
-
 from sklearn.utils.class_weight import compute_class_weight
 from costcla.metrics import cost_loss
 from costcla.models import BayesMinimumRiskClassifier
@@ -29,8 +25,8 @@ warnings.simplefilter("ignore")
 # Load the data.
 myData = pd.read_csv('train.csv')
 
-X = myData.iloc[:, 1].values
-y = myData.iloc[:, 2:].values
+X = myData.iloc[:20000, 1].values
+y = myData.iloc[:20000, 2:].values
 cost_list = [3, 4, 2, 6, 5, 7]
 label_names = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -84,10 +80,10 @@ mlb = 2
 # 1: no class imbalance method applied
 # 2: random undersampler
 # 3: SMOTE
-cim = 2
+cim = 1
 # Cost Minimization method (cm)
-# 1 : Probability Calibration using CostCla built-in function
-# 2 : Probability Calibration using the isotronic method
+# 1 : Probability Calibration using the isotronic method
+# 2 : Probability Calibration using CostCla built-in function
 # 3 : Class_Weighting using build in 'balanced' mode from sk_learn
 #  Method 3 takes too long to complete on the full dataset, change to myData.iloc[:50000, 1].values to run on smaller set
 cm = 1
@@ -110,7 +106,19 @@ if mlb == 1:
             data, target = classimbalance.random_undersampler(data, target)
         elif cim == 3:
             data, target = classimbalance.smote(data, target)
+            
         if cm == 1:
+            # Probability calibration using Isotonic Method
+            cc = CalibratedClassifierCV(clf, method="isotonic", cv=3)
+            model = cc.fit(data, target)
+            prob_test = model.predict_proba(X_test)
+            bmr = BayesMinimumRiskClassifier(calibration=False)
+            prediction = bmr.predict(prob_test, cost_matrix)
+            loss = cost_loss(y_test[:, e], prediction, cost_matrix)
+            pred_BR.append(prediction)
+            cost_BR.append(loss)
+            
+        elif cm == 2:
             # Probability calibration using CostCla calibration            
             model = clf.fit(data, target)
             prob_train = model.predict_proba(data)
@@ -121,17 +129,6 @@ if mlb == 1:
             loss = cost_loss(y_test[:, e], prediction, cost_matrix)
             pred_BR.append(prediction)
             cost_BR.append(loss)
-        elif cm == 2:
-            # Probability calibration using Isotonic Method
-            cc = CalibratedClassifierCV(clf, method="isotonic", cv=3)
-            model = cc.fit(data, target)
-            prob_test = model.predict_proba(X_test)
-            bmr = BayesMinimumRiskClassifier(calibration=False)
-            prediction = bmr.predict(prob_test, cost_matrix)
-            loss = cost_loss(y_test[:, e], prediction, cost_matrix)
-            pred_BR.append(prediction)
-            cost_BR.append(loss)
-            # Probability calibration using CostCla calibration
 
         elif cm == 3:
             # Cost minimization using class weighting
@@ -145,16 +142,18 @@ if mlb == 1:
     pred_BR = np.transpose(pred_BR)
 
 elif mlb == 2:
-    cost_list = [0, 3, 4, 2, 6, 5, 7]
+    cost_list = [1, 3, 4, 2, 6, 5, 7]
     # Calibrated Label Ranking models training
     print('Training Calibrated Label Ranking models...')
     preds = []
     cost_CLR = []
     for e, (data, target) in enumerate(ml.CalibratedLabelRanking(X_train, y_train)):
+       
         labels = np.unique(target)
         if e == 0 or len(labels) == 1:
             preds.append([1 for i in range(len(y_test))])
             continue
+
         if cost_list[labels[1]] > cost_list[labels[0]]:
             cost_1 = cost_list[labels[0]]
             cost_2 = cost_list[labels[1]]
@@ -163,30 +162,31 @@ elif mlb == 2:
             cost_1 = cost_list[labels[1]]
             cost_2 = cost_list[labels[0]]
             target = (target == labels[0]).astype(int)
+            
         fp = np.full((y_test.shape[0], 1), cost_1)
         fn = np.full((y_test.shape[0], 1), cost_2)
         tp = np.zeros((y_test.shape[0], 1))
         tn = np.zeros((y_test.shape[0], 1))
         cost_matrix = np.hstack((fp, fn, tp, tn))
+        
         if cim == 2:
             data, target = classimbalance.random_undersampler(data, target)
         elif cim == 3:
             data, target = classimbalance.smote(data, target)
+            
         if cm == 1:
             # Probability calibration using Isotonic Method
             cc = CalibratedClassifierCV(clf, method="isotonic", cv=3)
             model = cc.fit(data, target)
             prob_test = model.predict_proba(X_test)
             bmr = BayesMinimumRiskClassifier(calibration=False)
-            pred = bmr.predict(prob_test, cost_matrix)
-            prediction = np.empty_like(pred)
+            prediction = bmr.predict(prob_test, cost_matrix)
             if cost_list[labels[1]] > cost_list[labels[0]]:
-                prediction[pred == 0] = labels[1]
-                prediction[pred == 1] = labels[0]
+                prediction = [labels[1] if i == 1 else labels[0] for i in prediction]
             else:
-                prediction[pred == 0] = labels[0]
-                prediction[pred == 1] = labels[1]
+                prediction = [labels[0] if i == 1 else labels[1] for i in prediction]
             preds.append(prediction)
+            
         elif cm == 2:
             # Probability calibration using CostCla calibration
             model = clf.fit(data, target)
@@ -194,41 +194,38 @@ elif mlb == 2:
             bmr = BayesMinimumRiskClassifier(calibration=True)
             bmr.fit(target, prob_train)
             prob_test = model.predict_proba(X_test)
-            pred = bmr.predict(prob_test, cost_matrix)
-            prediction = np.empty_like(pred)
-            if cost_list[labels[0]] > cost_list[labels[1]]:
-                prediction[pred == 0] = labels[1]
-                prediction[pred == 1] = labels[0]
+            prediction = bmr.predict(prob_test, cost_matrix)
+            if cost_list[labels[1]] > cost_list[labels[0]]:
+                prediction = [labels[1] if i == 1 else labels[0] for i in prediction]
             else:
-                prediction[pred == 0] = labels[0]
-                prediction[pred == 1] = labels[1]
+                prediction = [labels[0] if i == 1 else labels[1] for i in prediction]
             preds.append(prediction)
+            
         elif cm == 3:
             # Cost minimization using class weighting
             clf = LogisticRegression(C=12.0, class_weight={0: cost_1, 1:cost_2})
             model = clf.fit(data, target)
-            pred = model.predict(X_test)
-            prediction = np.empty_like(pred)
+            prediction = model.predict(X_test)
             if cost_list[labels[1]] > cost_list[labels[0]]:
-                prediction[pred == 0] = labels[1]
-                prediction[pred == 1] = labels[0]
+                prediction = [labels[1] if i == 1 else labels[0] for i in prediction]
             else:
-                prediction[pred == 0] = labels[0]
-                prediction[pred == 1] = labels[1]
+                prediction = [labels[0] if i == 1 else labels[1] for i in prediction]
             preds.append(prediction)
 
-    cost_list = [3, 4, 2, 6, 5, 7]
+    cost_list = [1, 3, 4, 2, 6, 5, 7]
     preds = np.transpose(preds)
     pred_CLR = []
     cost = 0
+    
     for pred in preds:
         pred_CLR.append([1 if list(pred).count(i + 1) > list(pred).count(0) else 0 for i in range(6)])
     pred_CLR = np.array(pred_CLR)
+    
     for cnt, item in enumerate(pred_CLR):
         for i in item:
             if i != y_test[cnt][i]:
                 cost += cost_list[i]
-
+                
 # Print classification results
 print('// Accuracy and Cost of the approaches used //')
 
@@ -243,6 +240,7 @@ if mlb == 1:
         print('Accuracy: ',label_names[i], "->", label_acc)
         print('Cost: ',label_names[i], '->', cost_BR[i])
     print('Total Cost: ', sum(cost_BR))
+    
 elif mlb == 2:
     print()
     print('\t-Calibrated Label Ranking-')
@@ -251,5 +249,5 @@ elif mlb == 2:
     print('Accuracy per label')
     for i in range(6):
         label_acc = accuracy_score(pred_CLR[:, i], y_test[:, i])
-        print(label_names[i], "->", label_acc)
+        print('Accuracy: ',label_names[i], "->", label_acc)
     print('Total Cost: ', cost)
