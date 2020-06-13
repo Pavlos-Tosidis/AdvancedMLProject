@@ -10,7 +10,7 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-from sklearn.metrics import accuracy_score
+from sklearn import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 from skmultilearn.model_selection import iterative_train_test_split
 # Libraries for classification model.
@@ -25,8 +25,8 @@ warnings.simplefilter("ignore")
 # Load the data.
 myData = pd.read_csv('train.csv')
 
-X = myData.iloc[:, 1].values
-y = myData.iloc[:, 2:].values
+X = myData.iloc[:100000, 1].values
+y = myData.iloc[:100000, 2:].values
 cost_list = [3, 4, 2, 6, 5, 7]
 label_names = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -75,7 +75,7 @@ clf = LogisticRegression(C=12.0)
 # Multilabe methods (ml)
 # 1: Binary Relevance method
 # 2: Calibrated Label Ranking method
-mlb = 1
+mlb = 2
 # class imbalance method (cim)
 # 1: no class imbalance method applied
 # 2: random undersampler
@@ -233,10 +233,12 @@ if mlb == 1:
     print()
     print('\t-Binary Relevance-')
     print()
-    print('Accuracy per example:', accuracy_score(pred_BR, y_test))
+    print('Accuracy per example:', metrics.accuracy_score(pred_BR, y_test))
+    print('Precision (micro):', metrics.precision_score(pred_BR, y_test, average='micro'))
+    print('Presicion (macro):', metrics.precision_score(pred_BR, y_test, average='macro'))
     print('Accuracy and Cost per label')
     for i in range(6):
-        label_acc = accuracy_score(pred_BR[:, i], y_test[:, i])
+        label_acc = metrics.accuracy_score(pred_BR[:, i], y_test[:, i])
         print('Accuracy: ',label_names[i], "->", label_acc)
         print('Cost: ',label_names[i], '->', cost_BR[i])
     print('Total Cost: ', sum(cost_BR))
@@ -245,9 +247,11 @@ elif mlb == 2:
     print()
     print('\t-Calibrated Label Ranking-')
     print()
-    print('Accuracy per example:', accuracy_score(pred_CLR, y_test))
+    print('Accuracy per example:', metrics.accuracy_score(pred_CLR, y_test))
+    print('Precision (micro):', metrics.precision_score(pred_CLR, y_test, average='micro'))
+    print('Presicion (macro):', metrics.precision_score(pred_CLR, y_test, average='macro'))
     print('Accuracy per label')
     for i in range(6):
-        label_acc = accuracy_score(pred_CLR[:, i], y_test[:, i])
+        label_acc = metrics.accuracy_score(pred_CLR[:, i], y_test[:, i])
         print('Accuracy: ',label_names[i], "->", label_acc)
     print('Total Cost: ', cost)
