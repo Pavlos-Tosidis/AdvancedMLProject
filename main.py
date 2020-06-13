@@ -63,6 +63,7 @@ X = tfidf.fit_transform(X)
 # Split the data to train and test set.
 X_train, y_train, X_test, y_test = iterative_train_test_split(X, y, test_size=0.2)
 
+
 # Classifier used throughout the methodologies
 # LogReg showed decent results, and fast runs.
 clf = LogisticRegression(C=12.0)
@@ -87,13 +88,15 @@ cim = 3
 #  Method 3 takes too long to complete on the full dataset, change to myData.iloc[:50000, 1].values to run on smaller set
 cm = 1
 ############
-# Binary Relevance models training
-print()
-print('Training Binary Relevance models...')
-pred_BR = []
-cost_BR = []
 
 if mlb == 1:
+    
+    # Binary Relevance models training
+    print()
+    print('Training Binary Relevance models...')
+    pred_BR = []
+    cost_BR = []
+    
     for e, (data, target) in enumerate(ml.BinaryRelevance(X_train, y_train)):
         cost = cost_list[e]
         fp = np.full((y_test.shape[0], 1), 1)
@@ -141,11 +144,13 @@ if mlb == 1:
     pred_BR = np.transpose(pred_BR)
 
 elif mlb == 2:
+    
     cost_list = [1, 3, 4, 2, 6, 5, 7]
     # Calibrated Label Ranking models training
     print('Training Calibrated Label Ranking models...')
     preds = []
     cost_CLR = []
+    
     for e, (data, target) in enumerate(ml.CalibratedLabelRanking(X_train, y_train)):
        
         labels = np.unique(target)
