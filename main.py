@@ -16,7 +16,6 @@ from skmultilearn.model_selection import iterative_train_test_split
 # Libraries for classification model.
 from sklearn.linear_model import LogisticRegression
 import warnings
-from sklearn.utils.class_weight import compute_class_weight
 from costcla.metrics import cost_loss
 from costcla.models import BayesMinimumRiskClassifier
 from sklearn.calibration import CalibratedClassifierCV
@@ -25,8 +24,8 @@ warnings.simplefilter("ignore")
 # Load the data.
 myData = pd.read_csv('train.csv')
 
-X = myData.iloc[:100000, 1].values
-y = myData.iloc[:100000, 2:].values
+X = myData.iloc[:, 1].values
+y = myData.iloc[:, 2:].values
 cost_list = [3, 4, 2, 6, 5, 7]
 label_names = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -75,7 +74,7 @@ clf = LogisticRegression(C=12.0)
 # Multilabe methods (ml)
 # 1: Binary Relevance method
 # 2: Calibrated Label Ranking method
-mlb = 2
+mlb = 1
 # class imbalance method (cim)
 # 1: no class imbalance method applied
 # 2: random undersampler
@@ -234,24 +233,24 @@ if mlb == 1:
     print('\t-Binary Relevance-')
     print()
     print('Accuracy per example:', metrics.accuracy_score(pred_BR, y_test))
-    print('Precision (micro):', metrics.precision_score(pred_BR, y_test, average='micro'))
-    print('Presicion (macro):', metrics.precision_score(pred_BR, y_test, average='macro'))
-    print('Accuracy and Cost per label')
+    print('F1-Score (micro):', metrics.f1_score(pred_BR, y_test, average='micro'))
+    print('F1-Score (macro):', metrics.f1_score(pred_BR, y_test, average='macro'))
+    print('Accuracy per label')
     for i in range(6):
         label_acc = metrics.accuracy_score(pred_BR[:, i], y_test[:, i])
         print('Accuracy: ',label_names[i], "->", label_acc)
-        print('Cost: ',label_names[i], '->', cost_BR[i])
-    print('Total Cost: ', sum(cost_BR))
+        #print('Cost: ',label_names[i], '->', cost_BR[i])
+    print('Average Total Cost: ', sum(cost_BR)/y_test.shape[0])
     
 elif mlb == 2:
     print()
     print('\t-Calibrated Label Ranking-')
     print()
     print('Accuracy per example:', metrics.accuracy_score(pred_CLR, y_test))
-    print('Precision (micro):', metrics.precision_score(pred_CLR, y_test, average='micro'))
-    print('Presicion (macro):', metrics.precision_score(pred_CLR, y_test, average='macro'))
+    print('F1-Score (micro):', metrics.f1_score(pred_CLR, y_test, average='micro'))
+    print('F1-Score (macro):', metrics.f1_score(pred_CLR, y_test, average='macro'))
     print('Accuracy per label')
     for i in range(6):
         label_acc = metrics.accuracy_score(pred_CLR[:, i], y_test[:, i])
         print('Accuracy: ',label_names[i], "->", label_acc)
-    print('Total Cost: ', cost)
+    print('Average Total Cost: ', cost/y_test.shape[0])
