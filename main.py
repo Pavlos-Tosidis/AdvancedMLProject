@@ -75,12 +75,12 @@ clf = LogisticRegression(C=12.0)
 # Multilabe methods (ml)
 # 1: Binary Relevance method
 # 2: Calibrated Label Ranking method
-mlb = 2
+mlb = 1
 # class imbalance method (cim)
 # 1: no class imbalance method applied
 # 2: random undersampler
 # 3: SMOTE
-cim = 1
+cim = 3
 # Cost Minimization method (cm)
 # 1 : Probability Calibration using the isotronic method
 # 2 : Probability Calibration using CostCla built-in function
@@ -212,7 +212,7 @@ elif mlb == 2:
                 prediction = [labels[0] if i == 1 else labels[1] for i in prediction]
             preds.append(prediction)
 
-    cost_list = [1, 3, 4, 2, 6, 5, 7]
+    cost_list = [3, 4, 2, 6, 5, 7]
     preds = np.transpose(preds)
     pred_CLR = []
     cost = 0
@@ -222,9 +222,9 @@ elif mlb == 2:
     pred_CLR = np.array(pred_CLR)
     
     for cnt, item in enumerate(pred_CLR):
-        for i in item:
-            if i != y_test[cnt][i]:
-                cost += cost_list[i]
+        for e,i in enumerate(item):
+            if i != y_test[cnt][e]:
+                cost += cost_list[e]
                 
 # Print classification results
 print('// Accuracy and Cost of the approaches used //')
